@@ -1,0 +1,19 @@
+Phase 1:- 
+
+1. Walk me through you application Archirecture
+
+This is a 3-tier application. Where React Frontend served by Nginx. Backend by FLask REST API, 
+PostgreSQL database. Each Tier runs in it's own container Frontend proxies API Calls trhough 
+Nginx to the Flask Backend. Backend connects to database using Envirornment variables, Never Hardcoded the creds.
+
+2. What is Multi-stage Docker build and why did you use it?
+
+Multi-stage builds let you use one image to build your app and a separate, smaller image to run it.
+For the React frontend, Stage 1 uses Node to build the app, Stage 2 copies only the compiled files 
+into Nginx. Final image is ~25MB instead of 400MB — faster pulls, smaller attack surface."
+
+3. Why does your Docker Compose use service_healthy instead of just depends_on?
+
+Plain depends_on only waits for the container to start, not for the service inside it to be ready. 
+PostgreSQL takes a few seconds after container start to accept connections. 
+service_healthy waits for the actual healthcheck to pass, preventing backend startup failures.
