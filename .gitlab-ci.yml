@@ -4,9 +4,8 @@ variables:
   ECR_REGISTRY: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
   BACKEND_IMAGE: $ECR_REGISTRY/taskmanager-backend
   FRONTEND_IMAGE: $ECR_REGISTRY/taskmanager-frontend
-  SONAR_HOST: $SONAR_HOST_URL   # Set in GitLab CI/CD variables
+  SONAR_HOST: $SONAR_HOST_URL
 
-# ── Pipeline runs on every push to main or any merge request
 workflow:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
@@ -20,24 +19,23 @@ stages:
   - push
 
 # ──────────────────────────────────────────────
-# STAGE 1 — TEST (Run unit tests)
+# STAGE 1 — TEST
 # ──────────────────────────────────────────────
 backend-tests:
   stage: test
   image: python:3.11-slim
   before_script:
-    - pip install -r backend/requirements.txt
+    - pip install -r taskmanager/backend/requirements.txt
   script:
-    - cd backend
+    - cd taskmanager/backend
     - pytest test_app.py -v
-  # Store test results as artifact (viewable in GitLab UI)
   artifacts:
     reports:
-      junit: backend/report.xml
+      junit: taskmanager/backend/report.xml
     expire_in: 1 week
 
 # ──────────────────────────────────────────────
-# STAGE 2 — SAST (SonarQube code quality scan)
+# STAGE 2 — SAST
 # ──────────────────────────────────────────────
 sonarqube-scan:
   stage: sast
@@ -46,21 +44,21 @@ sonarqube-scan:
     entrypoint: [""]
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
-    GIT_DEPTH: "0"   # Full git history needed for accurate blame
+    GIT_DEPTH: "0"
   script:
     - sonar-scanner
         -Dsonar.projectKey=taskmanager
-        -Dsonar.sources=backend
+        -Dsonar.sources=taskmanager/backend
         -Dsonar.host.url=$SONAR_HOST
         -Dsonar.login=$SONAR_TOKEN
-  allow_failure: true   # Don't block pipeline if SonarQube is not set up yet
+  allow_failure: true
 
 # ──────────────────────────────────────────────
-# STAGE 3 — BUILD (Build Docker images)
+# STAGE 3 — BUILD
 # ──────────────────────────────────────────────
 build-backend:
   stage: build
-  image: docker:24-dind    # Docker-in-Docker
+  image: docker:24-dind
   services:
     - docker:24-dind
   variables:
@@ -68,9 +66,7 @@ build-backend:
   before_script:
     - docker info
   script:
-    # Tag with both commit SHA (unique) and latest
-    - docker build -t $BACKEND_IMAGE:$CI_COMMIT_SHA -t $BACKEND_IMAGE:latest ./backend
-    # Save image to file to pass to next stage
+    - docker build -t $BACKEND_IMAGE:$CI_COMMIT_SHA -t $BACKEND_IMAGE:latest ./taskmanager/backend
     - docker save $BACKEND_IMAGE:$CI_COMMIT_SHA > backend-image.tar
   artifacts:
     paths:
@@ -85,7 +81,7 @@ build-frontend:
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   script:
-    - docker build -t $FRONTEND_IMAGE:$CI_COMMIT_SHA -t $FRONTEND_IMAGE:latest ./frontend
+    - docker build -t $FRONTEND_IMAGE:$CI_COMMIT_SHA -t $FRONTEND_IMAGE:latest ./taskmanager/frontend
     - docker save $FRONTEND_IMAGE:$CI_COMMIT_SHA > frontend-image.tar
   artifacts:
     paths:
@@ -93,7 +89,7 @@ build-frontend:
     expire_in: 1 hour
 
 # ──────────────────────────────────────────────
-# STAGE 4 — SCAN (Trivy image vulnerability scan)
+# STAGE 4 — SCAN
 # ──────────────────────────────────────────────
 trivy-backend:
   stage: scan
@@ -101,12 +97,7 @@ trivy-backend:
   before_script:
     - docker load < backend-image.tar
   script:
-    # --exit-code 1 means pipeline FAILS if CRITICAL CVEs found
-    - trivy image
-        --exit-code 1
-        --severity CRITICAL
-        --no-progress
-        $BACKEND_IMAGE:$CI_COMMIT_SHA
+    - trivy image --exit-code 1 --severity CRITICAL --no-progress $BACKEND_IMAGE:$CI_COMMIT_SHA
   artifacts:
     reports:
       container_scanning: trivy-backend-report.json
@@ -117,17 +108,13 @@ trivy-frontend:
   before_script:
     - docker load < frontend-image.tar
   script:
-    - trivy image
-        --exit-code 1
-        --severity CRITICAL
-        --no-progress
-        $FRONTEND_IMAGE:$CI_COMMIT_SHA
+    - trivy image --exit-code 1 --severity CRITICAL --no-progress $FRONTEND_IMAGE:$CI_COMMIT_SHA
   artifacts:
     reports:
       container_scanning: trivy-frontend-report.json
 
 # ──────────────────────────────────────────────
-# STAGE 5 — PUSH (Push to Amazon ECR)
+# STAGE 5 — PUSH
 # ──────────────────────────────────────────────
 push-to-ecr:
   stage: push
@@ -135,9 +122,7 @@ push-to-ecr:
   services:
     - docker:24-dind
   before_script:
-    # Install AWS CLI inside the job
     - apk add --no-cache aws-cli
-    # Authenticate Docker to ECR using IAM credentials
     - aws ecr get-login-password --region $AWS_REGION |
         docker login --username AWS --password-stdin $ECR_REGISTRY
   script:
@@ -147,6 +132,5 @@ push-to-ecr:
     - docker push $BACKEND_IMAGE:latest
     - docker push $FRONTEND_IMAGE:$CI_COMMIT_SHA
     - docker push $FRONTEND_IMAGE:latest
-  # Only push on main branch — not on merge requests
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
