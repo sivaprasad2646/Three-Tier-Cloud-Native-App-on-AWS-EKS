@@ -94,10 +94,13 @@ build-frontend:
 trivy-backend:
   stage: scan
   image: aquasec/trivy:latest
-  before_script:
-    - docker load < backend-image.tar
   script:
-    - trivy image --exit-code 1 --severity CRITICAL --no-progress $BACKEND_IMAGE:$CI_COMMIT_SHA
+    - trivy image --input backend-image.tar \
+        --format json \
+        --output trivy-backend-report.json \
+        --severity CRITICAL \
+        --exit-code 1 \
+        --no-progress
   artifacts:
     reports:
       container_scanning: trivy-backend-report.json
@@ -105,10 +108,13 @@ trivy-backend:
 trivy-frontend:
   stage: scan
   image: aquasec/trivy:latest
-  before_script:
-    - docker load < frontend-image.tar
   script:
-    - trivy image --exit-code 1 --severity CRITICAL --no-progress $FRONTEND_IMAGE:$CI_COMMIT_SHA
+    - trivy image --input frontend-image.tar \
+        --format json \
+        --output trivy-frontend-report.json \
+        --severity CRITICAL \
+        --exit-code 1 \
+        --no-progress
   artifacts:
     reports:
       container_scanning: trivy-frontend-report.json
