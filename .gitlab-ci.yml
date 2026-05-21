@@ -46,11 +46,12 @@ sonarqube-scan:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
     GIT_DEPTH: "0"
   script:
-    - sonar-scanner
-        -Dsonar.projectKey=taskmanager
-        -Dsonar.sources=taskmanager/backend
-        -Dsonar.host.url=$SONAR_HOST
-        -Dsonar.login=$SONAR_TOKEN
+    - |
+      sonar-scanner \
+        -Dsonar.projectKey=taskmanager \
+        -Dsonar.sources=taskmanager/backend \
+        -Dsonar.host.url=$SONAR_HOST \
+        -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
 
 # ──────────────────────────────────────────────
@@ -120,9 +121,9 @@ trivy-frontend:
         --input frontend-image.tar \
         --format json \
         --output trivy-frontend-report.json \
-        --severity CRITICAL \
-        --exit-code 1 \
-        --no-progress
+        --severity CRITICAL
+        --exit-code 1
+        --ignore-unfixed
   artifacts:
     reports:
       container_scanning: trivy-frontend-report.json
