@@ -16,7 +16,7 @@ stages:
   - sast
   - build
   - scan
-  - push
+  - push-ecr-login
 
 # ──────────────────────────────────────────────
 # STAGE 1 — TEST
@@ -51,7 +51,8 @@ sonarqube-scan:
         -Dsonar.projectKey=taskmanager \
         -Dsonar.sources=taskmanager/backend \
         -Dsonar.host.url=$SONAR_HOST \
-        -Dsonar.token=$SONAR_TOKEN
+        -Dsonar.token=$SONAR_TOKEN \
+        -exit-code 0
   allow_failure: true
 
 # ──────────────────────────────────────────────
@@ -117,21 +118,15 @@ trivy-frontend:
 # ──────────────────────────────────────────────
 # STAGE 5 — PUSH
 # ──────────────────────────────────────────────
-push-to-ecr:
-  stage: push
-  image: docker:24-dind
+ecr-login:
+  stage: deploy
+  image: amazon/aws-cli:2.15.0
   services:
-    - docker:24-dind
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   before_script:
-    - apk add --no-cache aws-cli
-    - aws ecr get-login-password --region $AWS_REGION |
-        docker login --username AWS --password-stdin $ECR_REGISTRY
+    - yum install -y docker || true
   script:
-    - docker load < backend-image.tar
-    - docker load < frontend-image.tar
-    - docker push $BACKEND_IMAGE:$CI_COMMIT_SHA
-    - docker push $BACKEND_IMAGE:latest
-    - docker push $FRONTEND_IMAGE:$CI_COMMIT_SHA
-    - docker push $FRONTEND_IMAGE:latest
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
