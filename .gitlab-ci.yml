@@ -16,7 +16,7 @@ stages:
   - sast
   - build
   - scan
-  - push-ecr-login
+  - push
 
 # ──────────────────────────────────────────────
 # STAGE 1 — TEST
