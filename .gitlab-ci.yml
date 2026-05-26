@@ -120,13 +120,14 @@ trivy-frontend:
 # ──────────────────────────────────────────────
 ecr-login:
   stage: push
-  image: amazon/aws-cli:2.15.0
+  image: docker:24.0.5
   services:
-    - docker:dind
+    - docker:24.0.5-dind
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   before_script:
-    - yum install -y docker || true
+    - apk add --no-cache python3 py3-pip
+    - pip install awscli
   script:
     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
