@@ -1,0 +1,62 @@
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: backend
+    namespace: taskmanager
+  spec: 
+    replicas: 2
+    selector:
+      matchLabels:
+        app: backend
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    template:
+      metadata:
+        labels:
+          app: backend
+      spec:
+        containers:
+          - name: backend
+            image: "942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-backend:72cf7df"
+            ports:
+              - containerPort: 5000
+            env: 
+              - name: DB_HOST
+                valueFrom:
+                  configMapKeyRef:
+                    name: taskmanager-config
+                    key: DB_NAME
+              - name: DB_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: mysecret
+                    key: DB_USER
+              - name: DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: mysecret
+                    key: DB_PASSWORD
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 5000
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              failureThreshold: 3
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 5000
+              initialDelaySeconds: 10
+              periodSeconds: 5
+            
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
