@@ -2,9 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 import os
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Gauge
 
 app = Flask(__name__)
 CORS(app)  # Allows React frontend to call this API
+metrics = PrometheusMetrics(app)
+tasks_total = Gauge("taskmanager_tasks_total", "Total number of tasks in the database")
 
 # ── DB connection using environment variables (never hardcode passwords)
 def get_db():
@@ -49,6 +53,7 @@ def get_tasks():
         {"id": r[0], "title": r[1], "completed": r[2], "created_at": str(r[3])}
         for r in rows
     ]
+    tasks_total.set(len(tasks))
     return jsonify(tasks), 200
 
 # ── POST create a new task
@@ -94,3 +99,9 @@ def delete_task(task_id):
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=5432, debug=False)
+
+
+
+# Add right after app = Flask(__name__) and CORS(app)
+metrics = PrometheusMetrics(app)
+tasks_total = Gauge("taskmanager_tasks_total", "Total number of tasks in the database")
