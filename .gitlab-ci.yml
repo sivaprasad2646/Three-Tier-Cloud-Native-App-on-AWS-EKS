@@ -131,3 +131,30 @@ ecr-login:
     - pip install awscli
   script:
     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+
+
+# ------------------------------------------------------
+# STAGE 6 — Helm-Deploy
+# ------------------------------------------------------
+helm-deploy:
+  stage: deploy
+  image:
+    name: alpine/helm:3.14.0
+    entrypoint: [""]
+  before_script:
+    - apk add --no-cache aws-cli
+    - aws eks update-kubeconfig
+        --region $AWS_REGION
+        --name taskmanager-cluster
+  script:
+    # Upgrade (or install if first time) with new image tag
+    - helm upgrade --install taskmanager ./helm/taskmanager \
+        --namespace taskmanager \
+        --values helm/taskmanager/values.yaml \
+        --set backend.image.tag=$CI_COMMIT_SHA \
+        --set frontend.image.tag=$CI_COMMIT_SHA \
+        --atomic \
+        --timeout 5m
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
