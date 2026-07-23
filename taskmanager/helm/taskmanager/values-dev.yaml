@@ -1,0 +1,21 @@
+environment: dev
+
+backend:
+  replicas: 1
+  autoscalling: 
+    enabled: false
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+
+frontend:
+  replicas: 1
+  
+database:
+  host: "taskmanager-postgres.czewu2ceqsta.ap-south-1.rds.amazonaws.com"
+  name: "taskdb-dev"

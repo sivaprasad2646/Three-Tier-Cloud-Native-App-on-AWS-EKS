@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: taskmanager-backend
+  namespace: monitoring
+  labels:
+    # Must match the label selector in prometheus-stack
+    release: prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - taskmanager        # Watch services in taskmanager namespace
+  selector:
+    matchLabels:
+      app: backend         # Match your backend service label
+  endpoints:
+    - port: http         # Scrape on port 5001
+      path: /metrics       # At this path
+      interval: 15s        # Every 15 seconds

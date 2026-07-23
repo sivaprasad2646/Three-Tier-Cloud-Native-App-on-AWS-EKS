@@ -20,7 +20,7 @@
       spec:
         containers:
           - name: backend
-            image: "942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-backend:72cf7df"
+            image: "942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-backend:v24"
             ports:
               - containerPort: 5000
             env: 
@@ -28,7 +28,7 @@
                 valueFrom:
                   configMapKeyRef:
                     name: taskmanager-config
-                    key: DB_NAME
+                    key: DB_HOST
               - name: DB_USER
                 valueFrom:
                   secretKeyRef:
@@ -39,18 +39,23 @@
                   secretKeyRef:
                     name: mysecret
                     key: DB_PASSWORD
+              - name: DB_NAME
+                valueFrom:
+                  configMapKeyRef:
+                    name: taskmanager-config
+                    key: DB_NAME
             livenessProbe:
               httpGet:
                 path: /health
                 port: 5000
-              initialDelaySeconds: 10
+              initialDelaySeconds: 40   # ✅ increase
               periodSeconds: 10
-              failureThreshold: 3
+
             readinessProbe:
               httpGet:
                 path: /health
                 port: 5000
-              initialDelaySeconds: 10
+              initialDelaySeconds: 30   # ✅ increase
               periodSeconds: 5
             
             resources:

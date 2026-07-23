@@ -17,3 +17,52 @@ into Nginx. Final image is ~25MB instead of 400MB — faster pulls, smaller atta
 Plain depends_on only waits for the container to start, not for the service inside it to be ready. 
 PostgreSQL takes a few seconds after container start to accept connections. 
 service_healthy waits for the actual healthcheck to pass, preventing backend startup failures.
+
+Phase 2 Questions:=
+
+1. Your colleague says:
+"Why do we need separate build and scan stages? Let's just run Trivy inside the build stage right after docker build. Less stages, simpler pipeline."
+Is your colleague right or wrong? Give two specific reasons to support your answer.
+ANS:- If build and scan are separate stages, a scan failure doesn't waste a rebuild. GitLab can retry just the scan stage using the cached artifact. If they're combined, a scan failure means rebuilding the entire image from scratch on retry — wasted compute in a real pipeline.
+
+2. You pushed two tags to ECR — $CI_COMMIT_SHA and latest.
+Production is broken. Your team says "roll back to the previous version immediately."
+Explain exactly how the commit SHA tag saves you in this situation and why relying only on latest would leave you stuck.
+
+ANS:-  Each image tagged with $CI_COMMIT_SHA represents an exact version of the application. If production breaks, we can simply redeploy the previous known working SHA tag, ensuring we get the exact same code and dependencies.
+The latest tag is mutable and always points to the most recently pushed image. Once a new image is pushed, the previous version is overwritten, so we lose the ability to reliably roll back.
+
+3. A junior developer on your team does this in .gitlab-ci.yml:
+yamlpush-to-ecr:
+  script:
+    - aws configure set aws_access_key_id AKIAIOSFODNN7EXAMPLE
+    - aws configure set aws_secret_access_key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    - docker push $FRONTEND_IMAGE:latest
+
+ANS:- This is insecure because AWS credentials are hardcoded in the pipeline and exposed in the repository and logs. Instead, we should use GitLab CI/CD variables or IAM roles to securely manage credentials.
+
+PHASE 3
+
+Q 1 :- Your teammate clones the repo and runs terraform apply at the exact same time you do.
+What happens without the DynamoDB lock table, and what happens with it?
+
+ANS :- Without DynamoDB lock table if user A and User B tries to run the terraform run the state will corrupt and resources will mismatch and infra breaks
+If we use lock table when user A and User B tries to do same thing at a time it will create lock entry in DynamoDB and others will see Error and this will allow one process at a time.
+
+Q 2:- Your EKS worker nodes are in private subnets with no public IP.
+At 2am, a node needs to pull a new Docker image from ECR to scale up. Walk me through exactly how that network request travels — step by step from node to ECR and back.
+
+ANS :- Node in private subnet needs to pull from ECR
+Request hits the private subnet route table
+Route table says 0.0.0.0/0 → NAT Gateway
+NAT Gateway sits in the public subnet, has an Elastic IP
+Request leaves VPC through the Internet Gateway using that Elastic IP
+Hits ECR endpoint on the internet, authenticates via IAM role
+Response travels back the same path in reverse
+
+Q 3:- You ran terraform apply and it created your RDS instance. Your manager says "delete the database, we don't need it."
+A junior says "just delete rds.tf and run terraform apply again."
+Is that correct? And what is deletion_protection = true doing in the context of this situation?
+
+ANS:- Deleting rds.tf and running terraform apply is correct in theory — Terraform will plan to destroy the resource. But deletion_protection = true adds a safety net at the AWS API level, meaning even if Terraform tries to delete it, AWS will reject the API call and throw an error. You'd have to first set deletion_protection = false, apply that change, then delete the resource. Two deliberate steps — no accidents.
+

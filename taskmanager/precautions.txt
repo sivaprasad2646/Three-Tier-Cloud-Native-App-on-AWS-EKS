@@ -1,0 +1,3 @@
+#**** Check phase two and three before the final start of project 
+
+to ensure the terraform and K8s config map and secrets are stored perfectly.

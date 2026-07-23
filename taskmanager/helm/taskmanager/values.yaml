@@ -1,0 +1,53 @@
+# ── Global
+environment: production
+namespace: taskmanager
+
+frontend:
+  image:
+    repository: 942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-frontend
+    tag: latest
+    pullPolicy: Always
+  replicas: 2
+  port: 80
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+backend:
+  image:
+    repository: 942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-backend
+    tag: latest
+    pullPolicy: Always
+  replicas: 2
+  port: 5000
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+
+database:
+  host: "taskmanager-postgres.xxxxxx.ap-south-1.rds.amazonaws.com"
+  name: "taskdb"
+  port: "5432"
+  user: "taskmanageruser"
+  password: "taskmanagepassword"   # Phase 8 replaces this with Secrets Manager
+
+
+# ── Ingress
+ingress:
+  enabled: true
+  className: "alb"
+  scheme: "internet-facing"

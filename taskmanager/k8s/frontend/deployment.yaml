@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: "942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-frontend:1780497096"
+          image: "942088612648.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-frontend:v20"
           ports:
             - containerPort: 80
           livenessProbe:

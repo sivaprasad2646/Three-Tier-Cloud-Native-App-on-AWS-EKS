@@ -1,0 +1,67 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: taskmanager-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  groups:
+    - name: taskmanager.rules
+      rules:
+
+        # Alert 1 — Pod is down
+        - alert: TaskManagerPodDown
+          expr: |
+            kube_pod_status_ready{
+              namespace="taskmanager",
+              condition="true"
+            } == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} is down"
+            description: "Pod has been not ready for more than 2 minutes."
+
+        # Alert 2 — High error rate
+        - alert: HighErrorRate
+          expr: |
+            rate(flask_http_request_total{
+              status=~"5..",
+              namespace="taskmanager"
+            }[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate on Task Manager API"
+            description: "More than 5% of requests are returning 5xx errors."
+
+        # Alert 3 — High memory usage
+        - alert: HighMemoryUsage
+          expr: |
+            container_memory_usage_bytes{
+              namespace="taskmanager"
+            } / container_spec_memory_limit_bytes{
+              namespace="taskmanager"
+            } > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage in {{ $labels.pod }}"
+            description: "Pod is using more than 85% of its memory limit."
+
+        # Alert 4 — Slow API response
+        - alert: SlowAPIResponse
+          expr: |
+            histogram_quantile(0.95,
+              rate(flask_http_request_duration_seconds_bucket[5m])
+            ) > 1.0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Slow API responses detected"
+            description: "95th percentile response time is above 1 second."
