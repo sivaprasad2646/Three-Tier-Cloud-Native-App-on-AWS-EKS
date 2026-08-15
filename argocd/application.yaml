@@ -11,7 +11,7 @@ spec:
     repoURL: https://gitlab.com/sivaprasad2646-group/three-tier-devops-project.git
     targetRevision: main          # Watch the main branch
     path: k8s
-  destination:
+  destination:  
     server: https://kubernetes.default.svc
     namespace: taskmanager
   syncPolicy:

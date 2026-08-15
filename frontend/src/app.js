@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = "";
 
 export default function App() {
   const [tasks, setTasks] = useState([]);

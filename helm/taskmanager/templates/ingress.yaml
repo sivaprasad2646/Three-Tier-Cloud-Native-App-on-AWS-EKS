@@ -1,13 +1,16 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
-kind: Ingress 
+kind: Ingress
 metadata:
   name: taskmanager-ingress
-  namespace: taskmanager
+  namespace: {{ .Release.namespace }}
+  labels:
+    {{- include "taskmanager.labels" . | nindent 4 }}
   annotations:
-    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme | quote }}
     alb.ingress.kubernetes.io/target-type: "ip"
 spec:
-  ingressClassName: alb
   rules:
     - http:
         paths:
@@ -17,11 +20,12 @@ spec:
               service:
                 name: backend
                 port:
-                  number: 5000
+                  number: {{ .Values.backend.port }}
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: frontend-service
+                name: frontend
                 port:
-                  number: 80
+                  number: {{ .Values.frontend.port }}
+{{- end }}

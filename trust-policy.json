@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::905444005978:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/FDE8A7BC90312C212109CBD36448EB21"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "oidc.eks.ap-south-1.amazonaws.com/id/FDE8A7BC90312C212109CBD36448EB21:aud": "sts.amazonaws.com",
+          "oidc.eks.ap-south-1.amazonaws.com/id/FDE8A7BC90312C212109CBD36448EB21:sub": "system:serviceaccount:taskmanager:taskmanager-sa"
+        }
+      }
+    }
+  ]
+}

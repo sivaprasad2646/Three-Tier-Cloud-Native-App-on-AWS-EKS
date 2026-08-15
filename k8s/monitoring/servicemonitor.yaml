@@ -14,6 +14,6 @@ spec:
     matchLabels:
       app: backend         # Match your backend service label
   endpoints:
-    - port: "5000"         # Scrape on port 5001
+    - port: http         # Scrape on port 5001
       path: /metrics       # At this path
       interval: 15s        # Every 15 seconds
