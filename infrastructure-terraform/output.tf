@@ -16,3 +16,7 @@ output "rds_name" {
 output "eso_role_arn" {
   value = aws_iam_role.eso_role.arn
 }
+
+output "ai_assistant_role_arn" {
+  value = aws_iam_role.ai_assistant_role.arn
+}

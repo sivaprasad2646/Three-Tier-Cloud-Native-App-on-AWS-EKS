@@ -70,6 +70,7 @@ def health():
 # -------------------------
 # GET Tasks
 # -------------------------
+@app.route("/api/tasks", methods=["GET"])
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
     conn = get_db()
@@ -102,6 +103,7 @@ def get_tasks():
 # -------------------------
 # POST Task
 # -------------------------
+@app.route("/api/tasks", methods=["POST"])
 @app.route("/tasks", methods=["POST"])
 def create_task():
     data = request.get_json()
@@ -138,6 +140,7 @@ def create_task():
 # -------------------------
 # UPDATE Task
 # -------------------------
+@app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 @app.route("/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
     data = request.get_json()
@@ -163,6 +166,7 @@ def update_task(task_id):
 # -------------------------
 # DELETE Task
 # -------------------------
+@app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 @app.route("/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
     conn = get_db()

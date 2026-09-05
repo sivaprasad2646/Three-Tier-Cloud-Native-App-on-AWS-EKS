@@ -17,6 +17,24 @@ frontend:
       memory: "256Mi"
       cpu: "200m"
 
+# AI-Assistant 
+
+aiAssistant:
+  image:
+    repository: 905444005978.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-ai-assistant
+    tag: latest
+    pullPolicy: Always
+  replicas: 1
+  port: 5001
+  serviceAccountName: ai-assistant-sa
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
 backend:
   serviceAccountName: taskmanager-sa
   image:
@@ -40,11 +58,11 @@ backend:
 
 
 database:
-  host: "taskmanager-postgres.xxxxxx.ap-south-1.rds.amazonaws.com"
-  name: "taskdb"
+  host: "taskmanager-postgres.c7aekwi4qz0n.ap-south-1.rds.amazonaws.com"
+  name: "taskmanagerdb"
   port: "5432"
   user: "taskmanageruser"
-  password: "taskmanagerpassword"   # Phase 8 replaces this with Secrets Manager
+  password: "taskmanagepassword"   # Phase 8 replaces this with Secrets Manager
 
 
 # ── Ingress

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-assistant
+  namespace: taskmanager
+  labels:
+    app: ai-assistant
+spec:
+  replicas: 1              # 1 replica — Bedrock handles scaling on AWS side
+  selector:
+    matchLabels:
+      app: ai-assistant
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0    # Zero downtime — same pattern as backend
+  template:
+    metadata:
+      labels:
+        app: ai-assistant
+    spec:
+      # ── IRSA — pod inherits Bedrock permission from this service account
+      serviceAccountName: ai-assistant-service-account
+
+      containers:
+        - name: ai-assistant
+          image: 905444005978.dkr.ecr.ap-south-1.amazonaws.com/taskmanager-ai-assistant:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5001
+
+          env:
+            - name: AWS_REGION
+              value: "ap-south-1"    # Bedrock runs in us-east-1
+
+          # ── Liveness — restart pod if Flask crashes
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # ── Readiness — don't send traffic until Flask is up
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+          # ── Resources — AI service is lightweight, Bedrock does the heavy work
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+
+      # ── Graceful shutdown — let in-flight Bedrock calls finish
+      terminationGracePeriodSeconds: 60

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-assistant
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "taskmanager.labels" . | nindent 4 }}
+    app: ai-assistant
+spec:
+  replicas: {{ .Values.aiAssistant.replicas }}
+  selector:
+    matchLabels:
+      app: ai-assistant
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: ai-assistant
+    spec:
+      serviceAccountName: {{ .Values.aiAssistant.serviceAccountName }}
+      containers:
+        - name: ai-assistant
+          image: "{{ .Values.aiAssistant.image.repository }}:{{ .Values.aiAssistant.image.tag }}"
+          imagePullPolicy: {{ .Values.aiAssistant.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.aiAssistant.port }}
+          env:
+            - name: AWS_REGION
+              value: "us-east-1"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.aiAssistant.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.aiAssistant.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: {{ .Values.aiAssistant.resources.requests.memory | quote }}
+              cpu: {{ .Values.aiAssistant.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.aiAssistant.resources.limits.memory | quote }}
+              cpu: {{ .Values.aiAssistant.resources.limits.cpu | quote }}
+      terminationGracePeriodSeconds: 60

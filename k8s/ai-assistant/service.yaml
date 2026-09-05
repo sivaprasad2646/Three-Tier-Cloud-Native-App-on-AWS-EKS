@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-assistant
+  namespace: taskmanager
+  labels:
+    app: ai-assistant
+spec:
+  selector:
+    app: ai-assistant      # Routes to pods with this label
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+      name: http           # Named port — required for ServiceMonitor
+  type: ClusterIP          # Internal only — reached via Nginx proxy

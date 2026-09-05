@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-assistant
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "taskmanager.labels" . | nindent 4 }}
+    app: ai-assistant
+spec:
+  selector:
+    app: ai-assistant
+  ports:
+    - protocol: TCP
+      port: {{ .Values.aiAssistant.port }}
+      targetPort: {{ .Values.aiAssistant.port }}
+      name: http
+  type: ClusterIP

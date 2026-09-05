@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-assistant
+  namespace: monitoring
+  labels:
+    release: prometheus-stack    # Must match your Prometheus stack label
+spec:
+  namespaceSelector:
+    matchNames:
+      - taskmanager
+  selector:
+    matchLabels:
+      app: ai-assistant          # Matches service label
+  endpoints:
+    - port: http                 # Named port from service.yaml
+      path: /metrics
+      interval: 15s

@@ -11,6 +11,7 @@ metadata:
     alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme | quote }}
     alb.ingress.kubernetes.io/target-type: "ip"
 spec:
+  ingressClassName: alb
   rules:
     - http:
         paths:

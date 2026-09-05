@@ -11,6 +11,13 @@ spec:
   rules:
     - http:
         paths:
+          - path: /api/ai-assistant    
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-assistant
+                port:
+                  number: 5001
           - path: /api
             pathType: Prefix
             backend:
